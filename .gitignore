@@ -1,0 +1,13 @@
+# Raw data — 125 MB, download from Kaggle (link in README)
+data/*.csv
+
+# Power BI temp / cache files
+*.pbix.lock
+.pbi/
+*.tmp
+
+# OS / editor noise
+Thumbs.db
+desktop.ini
+.DS_Store
+.vscode/

@@ -1,0 +1,74 @@
+CREATE SCHEMA
+DROP TABLE
+DROP TABLE
+DROP TABLE
+DROP TABLE
+DROP TABLE
+DROP TABLE
+SELECT 1096
+ALTER TABLE
+SELECT 93096
+ALTER TABLE
+CREATE INDEX
+CREATE INDEX
+SELECT 32951
+ALTER TABLE
+CREATE INDEX
+SELECT 3095
+ALTER TABLE
+CREATE INDEX
+SELECT 96203
+ALTER TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+SELECT 109872
+ALTER TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+ANALYZE
+ orders | customers |     gmv     | cash_collected | avg_order_value | avg_review | pct_late 
+--------+-----------+-------------+----------------+-----------------+------------+----------
+  96203 |     93096 | 15371741.09 |    15374496.52 |          159.78 |       4.16 |      8.1
+
+ order_lines |     gmv     
+-------------+-------------
+      109872 | 15371741.09
+
+       tbl        | count  
+------------------+--------
+ dim_date         |   1096
+ dim_seller       |   3095
+ dim_product      |  32951
+ dim_customer     |  93096
+ fact_orders      |  96203
+ fact_order_items | 109872
+
+ orders_missing_customer | orders_missing_date | items_missing_product | items_missing_seller 
+-------------------------+---------------------+-----------------------+----------------------
+                       0 |                   0 |                     0 |                    0
+
+ year_month | orders |    gmv     | avg_review 
+------------+--------+------------+------------
+ 2017-01    |    750 |  127482.37 |       4.20
+ 2017-02    |   1653 |  271239.32 |       4.20
+ 2017-03    |   2546 |  414330.95 |       4.19
+ 2017-04    |   2303 |  390812.40 |       4.14
+ 2017-05    |   3545 |  566657.40 |       4.24
+ 2017-06    |   3135 |  490050.37 |       4.22
+ 2017-07    |   3872 |  566299.08 |       4.26
+ 2017-08    |   4193 |  645832.36 |       4.31
+ 2017-09    |   4150 |  701077.49 |       4.27
+ 2017-10    |   4478 |  751117.01 |       4.20
+ 2017-11    |   7288 | 1153229.37 |       3.99
+ 2017-12    |   5513 |  843078.29 |       4.09
+ 2018-01    |   7069 | 1077887.46 |       4.11
+ 2018-02    |   6555 |  966168.41 |       3.88
+ 2018-03    |   7003 | 1120598.24 |       3.81
+ 2018-04    |   6798 | 1132878.93 |       4.21
+ 2018-05    |   6749 | 1128774.52 |       4.24
+ 2018-06    |   6096 | 1011448.96 |       4.31
+ 2018-07    |   6156 | 1027286.52 |       4.32
+ 2018-08    |   6351 |  985491.64 |       4.31
+
