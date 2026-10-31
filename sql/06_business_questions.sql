@@ -24,7 +24,7 @@
 --     Business question: how is the marketplace growing month to month?
 --     Tables: v_orders_clean, order_items  (GMV)
 -- =============================================================================
-\echo '=== Q1. Monthly orders, customers, GMV, AOV'
+\qecho '=== Q1. Monthly orders, customers, GMV, AOV'
 SELECT o.order_month,
        COUNT(DISTINCT o.order_id)             AS orders,
        COUNT(DISTINCT o.customer_unique_id)   AS customers,
@@ -41,7 +41,7 @@ ORDER BY o.order_month;
 -- Q2. Top 10 product categories by GMV, with share of total
 --     Tables: v_orders_clean, order_items, products, category translation (4 tables)
 -- =============================================================================
-\echo '=== Q2. Top 10 categories by GMV'
+\qecho '=== Q2. Top 10 categories by GMV'
 SELECT COALESCE(t.product_category_name_english, 'unknown') AS category,
        COUNT(DISTINCT o.order_id)                          AS orders,
        SUM(1)                                              AS items_sold,
@@ -62,7 +62,7 @@ LIMIT 10;
 -- Q3. Revenue by customer state: where are the customers and the money?
 --     Tables: v_orders_clean, order_items
 -- =============================================================================
-\echo '=== Q3. Revenue and customers by state (top 10)'
+\qecho '=== Q3. Revenue and customers by state (top 10)'
 SELECT o.customer_state                                   AS state,
        COUNT(DISTINCT o.customer_unique_id)               AS customers,
        COUNT(DISTINCT o.order_id)                         AS orders,
@@ -84,7 +84,7 @@ LIMIT 10;
 --     Note: review is per ORDER, so an order with 3 sellers gives each seller
 --     the same score. Acceptable approximation; stated in README.
 -- =============================================================================
-\echo '=== Q4. Top 15 sellers by GMV'
+\qecho '=== Q4. Top 15 sellers by GMV'
 SELECT s.seller_id,
        s.seller_state,
        COUNT(DISTINCT o.order_id)                  AS orders,
@@ -105,7 +105,7 @@ LIMIT 15;
 -- Q5. Delivery performance by month: are we getting faster or slower?
 --     Tables: v_orders_clean only
 -- =============================================================================
-\echo '=== Q5. Delivery performance by month'
+\qecho '=== Q5. Delivery performance by month'
 SELECT order_month,
        COUNT(*)                                        AS orders,
        ROUND(AVG(delivery_days), 1)                    AS avg_delivery_days,
@@ -116,7 +116,7 @@ FROM v_orders_clean
 GROUP BY order_month
 ORDER BY order_month;
 
-\echo '=== Q5b. Delivery performance by customer state (min 500 orders)'
+\qecho '=== Q5b. Delivery performance by customer state (min 500 orders)'
 SELECT customer_state,
        COUNT(*)                                  AS orders,
        ROUND(AVG(delivery_days), 1)              AS avg_delivery_days,
@@ -132,7 +132,7 @@ ORDER BY pct_late DESC;
 -- Q6. Does late delivery hurt review scores?
 --     Tables: v_orders_clean, v_order_reviews_latest
 -- =============================================================================
-\echo '=== Q6. Review score vs delivery lateness'
+\qecho '=== Q6. Review score vs delivery lateness'
 SELECT CASE
          WHEN o.days_vs_estimate <= -7 THEN '1. >1 week early'
          WHEN o.days_vs_estimate <   0 THEN '2. early'
@@ -149,19 +149,33 @@ JOIN v_order_reviews_latest r ON r.order_id = o.order_id
 GROUP BY delivery_bucket
 ORDER BY delivery_bucket;
 
-\echo '=== Q6b. 2x2: late vs 1-2 star review'
+\qecho '=== Q6b. 2x2: late vs 1-2 star review'
 SELECT o.is_late,
        COUNT(*) FILTER (WHERE r.review_score <= 2) AS low_reviews,
        COUNT(*) FILTER (WHERE r.review_score >  2) AS ok_reviews
 FROM v_orders_clean o JOIN v_order_reviews_latest r USING (order_id)
 GROUP BY o.is_late ORDER BY o.is_late;
 
+\qecho '=== Q6c. Late x reviewed-before-delivery: where do the 1-2 star reviews come from?'
+SELECT o.is_late,
+       r.review_creation_date < o.order_delivered_customer_date            AS reviewed_pre_delivery,
+       COUNT(*)                                                             AS orders,
+       ROUND(AVG(r.review_score), 2)                                        AS avg_review,
+       COUNT(*) FILTER (WHERE r.review_score <= 2)                          AS low_reviews,
+       ROUND(100.0 * COUNT(*) FILTER (WHERE r.review_score <= 2) / COUNT(*), 1)                         AS pct_low_in_cell,
+       ROUND(100.0 * COUNT(*) FILTER (WHERE r.review_score <= 2)
+             / SUM(COUNT(*) FILTER (WHERE r.review_score <= 2)) OVER (), 1)                             AS pct_of_all_low_reviews
+FROM v_orders_clean o
+JOIN v_order_reviews_latest r USING (order_id)
+GROUP BY 1, 2
+ORDER BY 1, 2;
+
 
 -- =============================================================================
 -- Q7. Payment behaviour: type mix, installments, and CASH collected
 --     Tables: v_orders_clean, v_order_payments_agg  (CASH definition)
 -- =============================================================================
-\echo '=== Q7. Payment type mix (cash collected)'
+\qecho '=== Q7. Payment type mix (cash collected)'
 SELECT p.main_payment_type,
        COUNT(*)                                            AS orders,
        ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER (), 1)  AS pct_orders,
@@ -173,7 +187,7 @@ JOIN v_order_payments_agg p ON p.order_id = o.order_id
 GROUP BY p.main_payment_type
 ORDER BY orders DESC;
 
-\echo '=== Q7b. Installment distribution (credit card only)'
+\qecho '=== Q7b. Installment distribution (credit card only)'
 SELECT CASE
          WHEN p.max_installments = 1  THEN '1 (full)'
          WHEN p.max_installments <= 3 THEN '2-3'
@@ -195,7 +209,7 @@ ORDER BY MIN(p.max_installments);
 -- Q8. Basket size: how many items per order?
 --     Tables: v_orders_clean, order_items
 -- =============================================================================
-\echo '=== Q8. Items per order distribution'
+\qecho '=== Q8. Items per order distribution'
 WITH basket AS (
   SELECT o.order_id,
          COUNT(*)                     AS n_items,
@@ -220,7 +234,7 @@ ORDER BY MIN(n_items);
 -- Q9. Freight burden by category: where does shipping eat the price?
 --     Tables: v_orders_clean, order_items, products, translation
 -- =============================================================================
-\echo '=== Q9. Freight as % of price, by category (min 500 items)'
+\qecho '=== Q9. Freight as % of price, by category (min 500 items)'
 SELECT COALESCE(t.product_category_name_english, 'unknown') AS category,
        COUNT(*)                                            AS items,
        ROUND(AVG(i.price), 2)                              AS avg_price,
@@ -241,7 +255,7 @@ ORDER BY freight_pct_of_price DESC;
 -- Q10. When do people buy? Day of week x hour of day
 --      Tables: v_orders_clean
 -- =============================================================================
-\echo '=== Q10a. Orders by day of week'
+\qecho '=== Q10a. Orders by day of week'
 SELECT TO_CHAR(order_purchase_timestamp, 'Dy')            AS weekday,
        EXTRACT(ISODOW FROM order_purchase_timestamp)       AS dow_num,
        COUNT(*)                                            AS orders,
@@ -250,7 +264,7 @@ FROM v_orders_clean
 GROUP BY weekday, dow_num
 ORDER BY dow_num;
 
-\echo '=== Q10b. Orders by hour of day (grouped into dayparts)'
+\qecho '=== Q10b. Orders by hour of day (grouped into dayparts)'
 SELECT CASE
          WHEN EXTRACT(HOUR FROM order_purchase_timestamp) BETWEEN 0  AND 5  THEN '1. night  00-05'
          WHEN EXTRACT(HOUR FROM order_purchase_timestamp) BETWEEN 6  AND 11 THEN '2. morning 06-11'
@@ -268,7 +282,7 @@ ORDER BY daypart;
 -- Q11. One-time vs repeat customers: how much revenue do repeaters bring?
 --      Tables: v_orders_clean, order_items   (grouped by the PERSON)
 -- =============================================================================
-\echo '=== Q11. One-time vs repeat customers'
+\qecho '=== Q11. One-time vs repeat customers'
 WITH per_customer AS (
   SELECT o.customer_unique_id,
          COUNT(DISTINCT o.order_id)          AS n_orders,
@@ -292,7 +306,7 @@ ORDER BY customer_type;
 -- =============================================================================
 -- Q12. Headline KPIs for the README (single row)
 -- =============================================================================
-\echo '=== Q12. Headline KPIs (2017-01 to 2018-08, delivered orders)'
+\qecho '=== Q12. Headline KPIs (2017-01 to 2018-08, delivered orders)'
 WITH gmv AS (
   SELECT SUM(i.price + i.freight_value) AS gmv, SUM(i.price) AS product_rev
   FROM v_orders_clean o JOIN order_items i ON i.order_id = o.order_id
@@ -313,7 +327,7 @@ SELECT (SELECT COUNT(*)                        FROM v_orders_clean)  AS orders,
        (SELECT ROUND(AVG(delivery_days), 1) FROM v_orders_clean)      AS avg_delivery_days
 FROM gmv, cash;
 
-\echo '=== Q13a. Non-delivered orders by status and month (all orders, 2017-01..2018-08)'
+\qecho '=== Q13a. Non-delivered orders by status and month (all orders, 2017-01..2018-08)'
 SELECT DATE_TRUNC('month', order_purchase_timestamp)::date AS month,
        COUNT(*) FILTER (WHERE order_status = 'canceled')    AS canceled,
        COUNT(*) FILTER (WHERE order_status = 'unavailable') AS unavailable,
@@ -322,7 +336,7 @@ FROM orders
 WHERE order_purchase_timestamp >= '2017-01-01' AND order_purchase_timestamp < '2018-09-01'
 GROUP BY 1 ORDER BY 1;
 
-\echo '=== Q13b. Cancellation rate by seller (orders with items, min 100 orders)'
+\qecho '=== Q13b. Cancellation rate by seller (orders with items, min 100 orders)'
 SELECT i.seller_id, s.seller_state,
        COUNT(DISTINCT o.order_id)                                                  AS orders,
        COUNT(DISTINCT o.order_id) FILTER (WHERE o.order_status = 'canceled')       AS canceled,

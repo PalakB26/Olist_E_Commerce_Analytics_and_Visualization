@@ -17,7 +17,7 @@
 -- A1. Month-over-month growth with LAG()
 --     Technique: LAG() to compare each row to the previous row.
 -- =============================================================================
-\echo '=== A1. Month-over-month growth (LAG)'
+\qecho '=== A1. Month-over-month growth (LAG)'
 WITH monthly AS (
   SELECT o.order_month,
          COUNT(DISTINCT o.order_id)        AS orders,
@@ -45,7 +45,7 @@ ORDER BY order_month;
 -- A2. Running total and 3-month moving average
 --     Technique: window FRAMES — ROWS BETWEEN ... PRECEDING AND CURRENT ROW
 -- =============================================================================
-\echo '=== A2. Cumulative GMV and 3-month moving average (window frames)'
+\qecho '=== A2. Cumulative GMV and 3-month moving average (window frames)'
 WITH monthly AS (
   SELECT o.order_month, SUM(i.price + i.freight_value) AS gmv
   FROM v_orders_clean o
@@ -70,7 +70,7 @@ ORDER BY order_month;
 --     Retention = % of that cohort who ordered again N months later.
 --     Technique: MIN() OVER (PARTITION BY customer), AGE/date arithmetic, pivot.
 -- =============================================================================
-\echo '=== A3. Cohort retention matrix (% of cohort active in month N)'
+\qecho '=== A3. Cohort retention matrix (% of cohort active in month N)'
 WITH first_order AS (
   SELECT customer_unique_id,
          MIN(order_month) AS cohort_month
@@ -108,7 +108,7 @@ ORDER BY r.cohort_month;
 -- A4. Time to second purchase
 --     Technique: LEAD() within a customer partition.
 -- =============================================================================
-\echo '=== A4. Days between 1st and 2nd order (repeat customers only)'
+\qecho '=== A4. Days between 1st and 2nd order (repeat customers only)'
 WITH ordered AS (
   SELECT customer_unique_id,
          order_purchase_timestamp,
@@ -135,7 +135,7 @@ WHERE order_seq = 1 AND next_purchase IS NOT NULL;
 --     Monetary  = lifetime GMV
 --     Technique: NTILE() to score each dimension 1-5, then label segments.
 -- =============================================================================
-\echo '=== A5. RFM segments'
+\qecho '=== A5. RFM segments'
 DROP TABLE IF EXISTS customer_rfm;
 CREATE TABLE customer_rfm AS
 WITH snapshot AS (
@@ -192,7 +192,7 @@ ORDER BY gmv DESC;
 --     Uses ALL orders (not v_orders_clean), because the point is to see drop-off.
 --     Technique: conditional aggregation + stage-to-stage conversion.
 -- =============================================================================
-\echo '=== A6. Order fulfilment funnel (all orders, 2017-01..2018-08)'
+\qecho '=== A6. Order fulfilment funnel (all orders, 2017-01..2018-08)'
 WITH scope AS (
   SELECT * FROM orders
   WHERE order_purchase_timestamp >= '2017-01-01'
@@ -210,7 +210,7 @@ SELECT step, stage, n,
 FROM stages
 ORDER BY step;
 
-\echo '=== A6b. Average hours spent in each stage (delivered orders)'
+\qecho '=== A6b. Average hours spent in each stage (delivered orders)'
 SELECT ROUND(AVG(EXTRACT(EPOCH FROM order_approved_at - order_purchase_timestamp) / 3600), 1)          AS hrs_purchase_to_approval,
        ROUND(AVG(EXTRACT(EPOCH FROM order_delivered_carrier_date - order_approved_at) / 86400), 1)      AS days_approval_to_carrier,
        ROUND(AVG(EXTRACT(EPOCH FROM order_delivered_customer_date - order_delivered_carrier_date) / 86400), 1) AS days_carrier_to_customer,
@@ -224,7 +224,7 @@ WHERE order_approved_at IS NOT NULL
 -- A7. Ranking within groups: top 3 categories per state
 --     Technique: RANK() / DENSE_RANK() OVER (PARTITION BY ...)
 -- =============================================================================
-\echo '=== A7. Top 3 categories in each of the top 5 states'
+\qecho '=== A7. Top 3 categories in each of the top 5 states'
 WITH state_cat AS (
   SELECT o.customer_state,
          COALESCE(t.product_category_name_english, 'unknown') AS category,
@@ -255,7 +255,7 @@ ORDER BY r.state_total DESC, r.rnk;
 -- A8. Seller concentration: what share of GMV do the top sellers hold?
 --     Technique: cumulative share with window SUM, percent-rank.
 -- =============================================================================
-\echo '=== A8. Seller concentration (Pareto)'
+\qecho '=== A8. Seller concentration (Pareto)'
 WITH seller_gmv AS (
   SELECT i.seller_id, SUM(i.price + i.freight_value) AS gmv
   FROM v_orders_clean o
@@ -280,7 +280,7 @@ ORDER BY 1;
 -- A9. Seller delivery-lateness vs review: who should Olist fix first?
 --     Sellers with >= 100 delivered orders, ranked by late %.
 -- =============================================================================
-\echo '=== A9. Worst 10 sellers by late-delivery rate (min 100 orders)'
+\qecho '=== A9. Worst 10 sellers by late-delivery rate (min 100 orders)'
 SELECT s.seller_id, s.seller_state,
        COUNT(DISTINCT o.order_id)             AS orders,
        ROUND(100.0 * AVG(o.is_late::int), 1)  AS pct_late,
@@ -295,35 +295,43 @@ HAVING COUNT(DISTINCT o.order_id) >= 100
 ORDER BY pct_late DESC
 LIMIT 10;
 
-\echo '=== A10. Who missed the SLA: seller hand-off vs carrier transit'
-WITH o AS (
-  SELECT o.order_id, o.order_month, o.is_late,
-         o.order_delivered_carrier_date,
-         MIN(i.shipping_limit_date) AS shipping_limit
-  FROM v_orders_clean o
-  JOIN order_items i USING (order_id)
-  WHERE o.order_delivered_carrier_date IS NOT NULL
-  GROUP BY o.order_id, o.order_month, o.is_late, o.order_delivered_carrier_date
-)
-SELECT COUNT(*)                                                                   AS orders,
-       ROUND(100.0 * AVG((order_delivered_carrier_date > shipping_limit)::int), 1) AS pct_seller_late,
-       ROUND(100.0 * AVG(is_late::int), 1)                                        AS pct_customer_late,
-       ROUND(100.0 * AVG((is_late AND order_delivered_carrier_date > shipping_limit)::int), 1)     AS pct_late_seller_caused,
-       ROUND(100.0 * AVG((is_late AND order_delivered_carrier_date <= shipping_limit)::int), 1)    AS pct_late_carrier_caused
-FROM o;
+-- =============================================================================
+-- A10. Who missed the SLA: seller hand-off vs carrier transit
+--      shipping_limit_date is per item; take the earliest limit per order.
+-- =============================================================================
+\qecho '=== A10. Seller-late vs carrier-late (per order)'
+DROP TABLE IF EXISTS tmp_sla;
+CREATE TEMP TABLE tmp_sla AS
+SELECT o.order_id,
+       o.order_month,
+       o.is_late,
+       o.order_delivered_carrier_date > MIN(i.shipping_limit_date) AS seller_late
+FROM v_orders_clean o
+JOIN order_items i USING (order_id)
+WHERE o.order_delivered_carrier_date IS NOT NULL
+GROUP BY o.order_id, o.order_month, o.is_late, o.order_delivered_carrier_date;
 
-\echo '=== A10b. Same split, by month'
--- copy the CTE above, then:
+SELECT COUNT(*)                                                        AS orders,
+       ROUND(100.0 * AVG(seller_late::int), 1)                         AS pct_seller_late,
+       ROUND(100.0 * AVG(is_late::int), 1)                             AS pct_customer_late,
+       ROUND(100.0 * AVG((is_late AND seller_late)::int), 1)           AS pct_late_seller_caused,
+       ROUND(100.0 * AVG((is_late AND NOT seller_late)::int), 1)       AS pct_late_carrier_caused
+FROM tmp_sla;
+
+\qecho '=== A10b. Same split, by month'
 SELECT order_month,
-       ROUND(100.0 * AVG((order_delivered_carrier_date > shipping_limit)::int), 1) AS pct_seller_late,
-       ROUND(100.0 * AVG(is_late::int), 1)                                        AS pct_customer_late
-FROM o GROUP BY order_month ORDER BY order_month;
+       COUNT(*)                                        AS orders,
+       ROUND(100.0 * AVG(seller_late::int), 1)         AS pct_seller_late,
+       ROUND(100.0 * AVG(is_late::int), 1)             AS pct_customer_late
+FROM tmp_sla
+GROUP BY order_month
+ORDER BY order_month;
 
-\echo '=== A10c. Sellers with the worst hand-off SLA (min 100 orders)'
+\qecho '=== A10c. Sellers with the worst hand-off SLA (min 100 orders)'
 SELECT i.seller_id, s.seller_state,
-       COUNT(DISTINCT o.order_id) AS orders,
-       ROUND(100.0 * AVG((o.order_delivered_carrier_date > i.shipping_limit_date)::int), 1) AS pct_seller_late,
-       ROUND(100.0 * AVG(o.is_late::int), 1)                                                AS pct_customer_late
+       COUNT(DISTINCT o.order_id)                                                                AS orders,
+       ROUND(100.0 * AVG((o.order_delivered_carrier_date > i.shipping_limit_date)::int), 1)     AS pct_seller_late,
+       ROUND(100.0 * AVG(o.is_late::int), 1)                                                    AS pct_customer_late
 FROM v_orders_clean o
 JOIN order_items i USING (order_id)
 JOIN sellers s ON s.seller_id = i.seller_id
@@ -332,12 +340,3 @@ GROUP BY i.seller_id, s.seller_state
 HAVING COUNT(DISTINCT o.order_id) >= 100
 ORDER BY pct_seller_late DESC
 LIMIT 10;
-
-\echo '=== A11. Black Friday 2017 vs the average day that month'
-SELECT d.is_black_friday_2017,
-       COUNT(*) / COUNT(DISTINCT d.date_key)             AS orders_per_day,
-       ROUND(SUM(f.gmv) / COUNT(DISTINCT d.date_key), 0) AS gmv_per_day,
-       ROUND(100.0 * AVG(f.is_late::int), 1)             AS pct_late
-FROM dw.fact_orders f JOIN dw.dim_date d ON d.date_key = f.purchase_date_key
-WHERE d.year_month = '2017-11'
-GROUP BY 1;

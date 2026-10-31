@@ -1,3 +1,4 @@
+=== Q1. Monthly orders, customers, GMV, AOV
  order_month | orders | customers |    gmv     | avg_order_value 
 -------------+--------+-----------+------------+-----------------
  2017-01-01  |    750 |       718 |  127482.37 |          169.98
@@ -21,6 +22,7 @@
  2018-07-01  |   6156 |      6097 | 1027286.52 |          166.88
  2018-08-01  |   6351 |      6310 |  985491.64 |          155.17
 
+=== Q2. Top 10 categories by GMV
        category        | orders | items_sold | product_revenue | pct_of_total | avg_item_price 
 -----------------------+--------+------------+-----------------+--------------+----------------
  health_beauty         |   8610 |       9422 |      1229557.50 |         9.33 |         130.50
@@ -34,6 +36,7 @@
  auto                  |   3801 |       4131 |       577721.09 |         4.38 |         139.85
  garden_tools          |   3443 |       4263 |       469135.40 |         3.56 |         110.05
 
+=== Q3. Revenue and customers by state (top 10)
  state | customers | orders |    gmv     | pct_gmv | avg_freight_per_item | avg_delivery_days 
 -------+-----------+--------+------------+---------+----------------------+-------------------
  SP    |     39058 |  40399 | 5754814.84 |   37.44 |                15.12 |               8.6
@@ -47,6 +50,7 @@
  GO    |      1889 |   1950 |  333156.23 |    2.17 |                22.57 |              15.3
  ES    |      1925 |   1992 |  316666.12 |    2.06 |                22.00 |              15.6
 
+=== Q4. Top 15 sellers by GMV
             seller_id             | seller_state | orders |    gmv    | avg_review | pct_late_deliveries | avg_delivery_days 
 ----------------------------------+--------------+--------+-----------+------------+---------------------+-------------------
  4869f7a5dfa277a7dca6462dcf3b52b2 | SP           |   1124 | 247007.06 |       4.14 |                11.6 |              14.9
@@ -65,6 +69,7 @@
  a1043bafd471dff536d0c462352beb48 | MG           |    702 | 130412.74 |       4.25 |                 5.6 |              13.6
  cc419e0650a3c5ba77189a1882b7556a | SP           |   1651 | 125936.99 |       4.14 |                 6.0 |              11.5
 
+=== Q5. Delivery performance by month
  order_month | orders | avg_delivery_days | median_delivery_days | pct_late | avg_days_vs_estimate 
 -------------+--------+-------------------+----------------------+----------+----------------------
  2017-01-01  |    750 |              12.8 |                   11 |      3.1 |                -27.4
@@ -88,6 +93,7 @@
  2018-07-01  |   6156 |               8.9 |                    7 |      4.5 |                -11.4
  2018-08-01  |   6351 |               7.7 |                    7 |     10.4 |                 -8.2
 
+=== Q5b. Delivery performance by customer state (min 500 orders)
  customer_state | orders | avg_delivery_days | pct_late | avg_days_vs_estimate 
 ----------------+--------+-------------------+----------+----------------------
  MA             |    713 |              21.5 |     19.6 |                 -9.4
@@ -108,6 +114,7 @@
  MG             |  11319 |              11.9 |      5.6 |                -13.2
  PR             |   4903 |              11.9 |      5.0 |                -13.2
 
+=== Q6. Review score vs delivery lateness
    delivery_bucket    | orders | avg_review | pct_1_or_2_stars | pct_5_stars 
 ----------------------+--------+------------+------------------+-------------
  1. >1 week early     |  75487 |       4.31 |              9.0 |        63.4
@@ -116,11 +123,21 @@
  4. up to 1 week late |   3599 |       2.71 |             49.4 |        23.9
  5. >1 week late      |   2779 |       1.70 |             79.3 |         7.0
 
+=== Q6b. 2x2: late vs 1-2 star review
  is_late | low_reviews | ok_reviews 
 ---------+-------------+------------
  f       |        8088 |      79814
  t       |        4140 |       3518
 
+=== Q6c. Late x reviewed-before-delivery: where do the 1-2 star reviews come from?
+ is_late | reviewed_pre_delivery | orders | avg_review | low_reviews | pct_low_in_cell | pct_of_all_low_reviews 
+---------+-----------------------+--------+------------+-------------+-----------------+------------------------
+ f       | f                     |  85177 |       4.30 |        7825 |             9.2 |                   64.0
+ f       | t                     |   2725 |       4.28 |         263 |             9.7 |                    2.2
+ t       | f                     |   2263 |       3.91 |         342 |            15.1 |                    2.8
+ t       | t                     |   5395 |       2.00 |        3798 |            70.4 |                   31.1
+
+=== Q7. Payment type mix (cash collected)
  main_payment_type | orders | pct_orders | cash_collected | avg_order_cash | avg_installments 
 -------------------+--------+------------+----------------+----------------+------------------
  credit_card       |  72612 |       75.5 |    12063274.18 |         166.13 |              3.5
@@ -128,6 +145,7 @@
  voucher           |   2970 |        3.1 |      341146.39 |         114.86 |              1.1
  debit_card        |   1481 |        1.5 |      207775.15 |         140.29 |              1.0
 
+=== Q7b. Installment distribution (credit card only)
  installments | orders | pct  | avg_order_cash 
 --------------+--------+------+----------------
  2-3          |  21961 | 30.2 |         134.96
@@ -136,6 +154,7 @@
  7-10         |  11373 | 15.7 |         333.44
  11+          |    329 |  0.5 |         361.50
 
+=== Q8. Items per order distribution
  items_in_order | orders | pct_orders | avg_order_gmv | pct_multi_seller 
 ----------------+--------+------------+---------------+------------------
  1              |  86598 |      90.02 |        149.99 |              0.0
@@ -143,6 +162,7 @@
  3              |   1301 |       1.35 |        292.56 |             15.6
  4+             |    932 |       0.97 |        480.40 |             12.1
 
+=== Q9. Freight as % of price, by category (min 500 items)
             category             | items | avg_price | avg_freight | freight_pct_of_price | avg_weight_kg 
 ---------------------------------+-------+-----------+-------------+----------------------+---------------
  electronics                     |  2728 |     56.79 |       16.74 |                 29.5 |          0.77
@@ -174,6 +194,7 @@
  small_appliances                |   658 |    277.74 |       23.33 |                  8.4 |          2.93
  watches_gifts                   |  5853 |    198.73 |       16.75 |                  8.4 |          0.58
 
+=== Q10a. Orders by day of week
  weekday | dow_num | orders | pct  
 ---------+---------+--------+------
  Mon     |       1 |  15660 | 16.3
@@ -184,6 +205,7 @@
  Sat     |       6 |  10519 | 10.9
  Sun     |       7 |  11612 | 12.1
 
+=== Q10b. Orders by hour of day (grouped into dayparts)
       daypart       | orders | pct  
 --------------------+--------+------
  1. night  00-05    |   4582 |  4.8
@@ -191,15 +213,18 @@
  3. afternoon 12-17 |  37079 | 38.5
  4. evening 18-23   |  33018 | 34.3
 
+=== Q11. One-time vs repeat customers
  customer_type | customers | pct_customers | orders |     gmv     | pct_gmv | avg_lifetime_gmv 
 ---------------+-----------+---------------+--------+-------------+---------+------------------
  one-time      |     90307 |         97.00 |  90307 | 14511207.90 |   94.40 |           160.69
  repeat (2+)   |      2789 |          3.00 |   5896 |   860533.19 |    5.60 |           308.55
 
+=== Q12. Headline KPIs (2017-01 to 2018-08, delivered orders)
  orders | customers | active_sellers |     gmv     | cash_collected | avg_order_value | avg_review | pct_late | avg_delivery_days 
 --------+-----------+----------------+-------------+----------------+-----------------+------------+----------+-------------------
   96203 |     93096 |           2945 | 15371741.09 |    15374496.52 |          159.78 |       4.16 |      8.1 |              12.5
 
+=== Q13a. Non-delivered orders by status and month (all orders, 2017-01..2018-08)
    month    | canceled | unavailable | pct_lost 
 ------------+----------+-------------+----------
  2017-01-01 |        3 |          10 |     1.63
@@ -223,6 +248,7 @@
  2018-07-01 |       41 |          18 |     0.94
  2018-08-01 |       84 |           7 |     1.40
 
+=== Q13b. Cancellation rate by seller (orders with items, min 100 orders)
             seller_id             | seller_state | orders | canceled | pct_canceled 
 ----------------------------------+--------------+--------+----------+--------------
  1127b7f2594683f2510f1c2c834a486b | SP           |    114 |        4 |          3.5

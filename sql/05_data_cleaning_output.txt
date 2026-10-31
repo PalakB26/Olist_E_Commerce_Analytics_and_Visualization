@@ -1,8 +1,10 @@
+=== A1. Delivered orders missing a delivery date
  delivered_but_no_delivery_date 
 --------------------------------
                               8
 (1 row)
 
+=== A2. Orders missing approval timestamp, by status
  order_status | missing_approved_at 
 --------------+---------------------
  canceled     |                 141
@@ -10,21 +12,25 @@
  created      |                   5
 (3 rows)
 
+=== A3. Timeline sanity: any event dated before the purchase?
  approved_before_purchase | carrier_before_purchase | delivered_before_purchase | delivered_before_carrier 
 --------------------------+-------------------------+---------------------------+--------------------------
                         0 |                     166 |                         0 |                       23
 (1 row)
 
+=== A4. Non-positive prices, freight, payments
  items_price_le_0 | items_freight_lt_0 | payments_le_0 
 ------------------+--------------------+---------------
                 0 |                  0 |             9
 (1 row)
 
+=== A5. Does payment total match item total per order? (tolerance 1 cent)
  orders_with_both | matching | paid_more | paid_less 
 ------------------+----------+-----------+-----------
             98665 |    98362 |       264 |        39
 (1 row)
 
+=== A6. Orders per month at the edges of the date range
    month    | orders 
 ------------+--------
  2016-09-01 |      4
@@ -35,58 +41,70 @@
  2018-10-01 |      4
 (6 rows)
 
+=== A7. Customer / seller zips with no geolocation match
  customer_zips_unmatched | seller_zips_unmatched 
 -------------------------+-----------------------
                      157 |                     7
 (1 row)
 
+=== A8. Geolocation points outside Brazil (bad coordinates)
  points_outside_brazil 
 -----------------------
                     42
 (1 row)
 
+=== A9. Duplicate reviews: how many orders have >1 review?
  orders_with_multiple_reviews | extra_review_rows 
 ------------------------------+-------------------
                           547 |               551
 (1 row)
 
- reviewed_before_delivery | reviewed_orders | pct | avg_score_pre_delivery | avg_score_post_delivery 
---------------------------+-----------------+-----+------------------------+-------------------------
-                     8120 |           95560 | 8.5 |                   2.77 |                    4.29
-(1 row)
-
-INSERT 0 0
+=== B1. Insert missing category translations
+INSERT 0 2
+=== B2. Add surrogate key to order_reviews
+ALTER TABLE
+ALTER TABLE
+=== B3. Create v_order_reviews_latest
 CREATE VIEW
+=== B4. Build geo_zip lookup table
 DROP TABLE
 SELECT 19010
 ALTER TABLE
+=== B5. Create v_orders_clean
 CREATE VIEW
+=== B6. Create v_order_payments_agg
 CREATE VIEW
+=== C1. Translation coverage is now complete
  still_untranslated 
 --------------------
                   0
 (1 row)
 
+=== C2. Reviews: one per order in the view
  raw_rows | view_rows | distinct_orders 
 ----------+-----------+-----------------
     99224 |     98673 |           98673
 (1 row)
 
+=== C3. geo_zip: one row per zip, and coverage of customers
  zips_in_lookup | customers_with_coords | customers_total 
 ----------------+-----------------------+-----------------
           19010 |                 99162 |           99441
 (1 row)
 
+=== C4. v_orders_clean size vs raw orders
  raw_orders | clean_orders | pct_kept 
 ------------+--------------+----------
       99441 |        96203 |    96.74
 (1 row)
 
+=== C5. Payments view: exactly one row per order, no fan-out
  rows  | orders 
 -------+--------
  99437 |  99437
 (1 row)
 
+=== C6. Objects created by this script
        table_name       | table_type 
 ------------------------+------------
  geo_zip                | BASE TABLE
@@ -94,4 +112,10 @@ CREATE VIEW
  v_order_reviews_latest | VIEW
  v_orders_clean         | VIEW
 (4 rows)
+
+=== C7. Reviews created before the order was delivered
+ reviewed_before_delivery | reviewed_orders | pct | avg_score_pre_delivery | avg_score_post_delivery 
+--------------------------+-----------------+-----+------------------------+-------------------------
+                     8120 |           95560 | 8.5 |                   2.77 |                    4.29
+(1 row)
 

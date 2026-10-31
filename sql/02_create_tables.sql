@@ -5,15 +5,13 @@
 -- =============================================================================
 
 -- Start clean so the script is re-runnable.
-DROP TABLE IF EXISTS order_reviews;
-DROP TABLE IF EXISTS order_payments;
-DROP TABLE IF EXISTS order_items;
-DROP TABLE IF EXISTS orders;
-DROP TABLE IF EXISTS products;
-DROP TABLE IF EXISTS product_category_name_translation;
-DROP TABLE IF EXISTS sellers;
-DROP TABLE IF EXISTS customers;
-DROP TABLE IF EXISTS geolocation;
+DROP SCHEMA IF EXISTS dw CASCADE;
+DROP VIEW  IF EXISTS v_orders_clean, v_order_payments_agg, v_order_reviews_latest;
+DROP TABLE IF EXISTS customer_rfm, geo_zip;
+
+DROP TABLE IF EXISTS order_reviews, order_payments, order_items, orders,
+                     products, product_category_name_translation,
+                     sellers, customers, geolocation CASCADE;
 
 -- -----------------------------------------------------------------------------
 -- Dimension-like tables (no dependencies)

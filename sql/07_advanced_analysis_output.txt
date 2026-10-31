@@ -1,3 +1,4 @@
+=== A1. Month-over-month growth (LAG)
  order_month | orders |    gmv     | prev_orders | orders_mom_pct | gmv_mom_pct | gmv_yoy_pct 
 -------------+--------+------------+-------------+----------------+-------------+-------------
  2017-01-01  |    750 |  127482.37 |             |                |             |            
@@ -21,6 +22,7 @@
  2018-07-01  |   6156 | 1027286.52 |        6096 |            1.0 |         1.6 |        81.4
  2018-08-01  |   6351 |  985491.64 |        6156 |            3.2 |        -4.1 |        52.6
 
+=== A2. Cumulative GMV and 3-month moving average (window frames)
  order_month |    gmv     | cumulative_gmv | gmv_3m_moving_avg | pct_of_total_to_date 
 -------------+------------+----------------+-------------------+----------------------
  2017-01-01  |  127482.37 |      127482.37 |         127482.37 |                  0.8
@@ -44,6 +46,7 @@
  2018-07-01  | 1027286.52 |    14386249.45 |        1055836.67 |                 93.6
  2018-08-01  |  985491.64 |    15371741.09 |        1008075.71 |                100.0
 
+=== A3. Cohort retention matrix (% of cohort active in month N)
  cohort_month | cohort_size |  m1  |  m2  |  m3  |  m6  | m12  
 --------------+-------------+------+------+------+------+------
  2017-01-01   |         718 | 0.28 | 0.28 | 0.14 | 0.42 | 0.70
@@ -67,10 +70,12 @@
  2018-07-01   |        5946 | 0.52 |      |      |      |     
  2018-08-01   |        6144 |      |      |      |      |     
 
+=== A4. Days between 1st and 2nd order (repeat customers only)
  repeat_customers | avg_days_to_2nd | median_days_to_2nd | pct_within_1_day | pct_within_30_days 
 ------------------+-----------------+--------------------+------------------+--------------------
              2789 |            80.2 | 28.977233796296296 |             30.5 |               50.5
 
+=== A5. RFM segments
 DROP TABLE
 SELECT 93096
 ALTER TABLE
@@ -85,6 +90,7 @@ ALTER TABLE
  At risk (were loyal) |       993 |           1.1 |  292992.62 |     1.9 |  295.06 |              379 |       2.08
  Loyal                |       599 |           0.6 |  181056.05 |     1.2 |  302.26 |              216 |       2.09
 
+=== A6. Order fulfilment funnel (all orders, 2017-01..2018-08)
  step |       stage       |   n   | pct_of_purchased | step_conversion_pct | dropped_at_this_step 
 ------+-------------------+-------+------------------+---------------------+----------------------
     1 | purchased         | 99092 |           100.00 |                     |                     
@@ -92,10 +98,12 @@ ALTER TABLE
     3 | handed_to_carrier | 97376 |            98.27 |               98.40 |                -1581
     4 | delivered         | 96204 |            97.09 |               98.80 |                -1172
 
+=== A6b. Average hours spent in each stage (delivered orders)
  hrs_purchase_to_approval | days_approval_to_carrier | days_carrier_to_customer | days_total 
 --------------------------+--------------------------+--------------------------+------------
                       9.6 |                      2.8 |                      9.4 |       12.5
 
+=== A7. Top 3 categories in each of the top 5 states
  customer_state | rnk |       category        |  revenue  | pct_of_state 
 ----------------+-----+-----------------------+-----------+--------------
  SP             |   1 | bed_bath_table        | 472208.17 |          9.3
@@ -114,6 +122,7 @@ ALTER TABLE
  PR             |   2 | watches_gifts         |  57287.20 |          8.6
  PR             |   3 | health_beauty         |  53402.57 |          8.0
 
+=== A8. Seller concentration (Pareto)
  top_pct_of_sellers | sellers | pct_of_gmv 
 --------------------+---------+------------
                   1 |      44 |       30.6
@@ -122,6 +131,7 @@ ALTER TABLE
                  20 |     603 |       82.0
                  50 |    1487 |       96.5
 
+=== A9. Worst 10 sellers by late-delivery rate (min 100 orders)
             seller_id             | seller_state | orders | pct_late | avg_review | gmv_at_risk 
 ----------------------------------+--------------+--------+----------+------------+-------------
  06a2c3af7b3aee5d69171b0e14f0ee87 | MA           |    389 |     23.6 |       4.02 |    48169.50
@@ -135,10 +145,38 @@ ALTER TABLE
  431af27f296bc6519d890aa5a05fdb11 | SP           |    116 |     15.3 |       3.80 |    15103.05
  dd7ddc04e1b6c2c614352b383efe2d36 | SP           |    121 |     14.8 |       3.78 |    12025.18
 
+=== A10. Seller-late vs carrier-late (per order)
+DROP TABLE
+SELECT 96202
  orders | pct_seller_late | pct_customer_late | pct_late_seller_caused | pct_late_carrier_caused 
 --------+-----------------+-------------------+------------------------+-------------------------
   96202 |             8.9 |               8.1 |                    2.2 |                     5.9
 
+=== A10b. Same split, by month
+ order_month | orders | pct_seller_late | pct_customer_late 
+-------------+--------+-----------------+-------------------
+ 2017-01-01  |    750 |            22.3 |               3.1
+ 2017-02-01  |   1653 |            17.5 |               3.2
+ 2017-03-01  |   2546 |             6.8 |               5.6
+ 2017-04-01  |   2303 |             7.3 |               7.9
+ 2017-05-01  |   3545 |             7.3 |               3.6
+ 2017-06-01  |   3135 |             8.0 |               3.9
+ 2017-07-01  |   3872 |             7.8 |               3.4
+ 2017-08-01  |   4193 |             6.8 |               3.3
+ 2017-09-01  |   4149 |             7.2 |               5.2
+ 2017-10-01  |   4478 |             7.9 |               5.3
+ 2017-11-01  |   7288 |            12.9 |              14.3
+ 2017-12-01  |   5513 |            10.9 |               8.4
+ 2018-01-01  |   7069 |            10.1 |               6.6
+ 2018-02-01  |   6555 |            12.2 |              16.0
+ 2018-03-01  |   7003 |             8.5 |              21.4
+ 2018-04-01  |   6798 |             6.0 |               5.3
+ 2018-05-01  |   6749 |             6.6 |               8.2
+ 2018-06-01  |   6096 |             6.7 |               1.4
+ 2018-07-01  |   6156 |             9.0 |               4.5
+ 2018-08-01  |   6351 |             9.2 |              10.4
+
+=== A10c. Sellers with the worst hand-off SLA (min 100 orders)
             seller_id             | seller_state | orders | pct_seller_late | pct_customer_late 
 ----------------------------------+--------------+--------+-----------------+-------------------
  88460e8ebdecbfecb5f9601833981930 | PR           |    246 |            50.3 |              19.7
@@ -151,9 +189,4 @@ ALTER TABLE
  213b25e6f54661939f11710a6fddb871 | SP           |    152 |            35.8 |              11.1
  37515688008a7a40ac93e3b2e4ab203f | SP           |    227 |            35.1 |              10.0
  4c2b230173bb36f9b240f2b8ac11786e | SP           |    258 |            34.4 |               9.0
-
- is_black_friday_2017 | orders_per_day | gmv_per_day | pct_late 
-----------------------+----------------+-------------+----------
- f                    |            211 |       33726 |     13.3
- t                    |           1147 |      175178 |     20.0
 

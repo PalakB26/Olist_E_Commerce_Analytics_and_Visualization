@@ -1,6 +1,6 @@
          tbl          |    n    
 ----------------------+---------
- category_translation |      73
+ category_translation |      71
  customers            |   99441
  geolocation          | 1000163
  order_items          |  112650
@@ -56,12 +56,14 @@
 
  no_category | category_not_translated | total_products 
 -------------+-------------------------+----------------
-         610 |                       0 |          32951
+         610 |                      13 |          32951
 (1 row)
 
- product_category_name 
------------------------
-(0 rows)
+             product_category_name             
+-----------------------------------------------
+ portateis_cozinha_e_preparadores_de_alimentos
+ pc_gamer
+(2 rows)
 
      first_order     |     last_order      | orders 
 ---------------------+---------------------+--------

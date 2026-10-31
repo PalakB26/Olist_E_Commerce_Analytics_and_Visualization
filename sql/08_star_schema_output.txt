@@ -5,50 +5,61 @@ DROP TABLE
 DROP TABLE
 DROP TABLE
 DROP TABLE
+=== dim_date
 SELECT 608
 ALTER TABLE
+=== dim_customer
 SELECT 93096
 ALTER TABLE
 CREATE INDEX
 CREATE INDEX
+=== dim_product
 SELECT 32951
 ALTER TABLE
 CREATE INDEX
+=== dim_seller
 SELECT 3095
 ALTER TABLE
 CREATE INDEX
+=== fact_orders
 SELECT 96203
 ALTER TABLE
 CREATE INDEX
 CREATE INDEX
 CREATE INDEX
+=== fact_order_items
 SELECT 109872
 ALTER TABLE
 CREATE INDEX
 CREATE INDEX
 CREATE INDEX
 ANALYZE
+=== Reconciliation vs 06 Q12 (orders 96203, gmv 15371741.09, cash 15374496.52)
  orders | customers |     gmv     | cash_collected | avg_order_value | avg_review | pct_late 
 --------+-----------+-------------+----------------+-----------------+------------+----------
   96203 |     93096 | 15371741.09 |    15374496.52 |          159.78 |       4.16 |      8.1
 
+=== Items fact sums to the same GMV
  order_lines |     gmv     
 -------------+-------------
       109872 | 15371741.09
 
+=== Row counts of every dw object
        tbl        | count  
 ------------------+--------
  dim_date         |    608
  dim_seller       |   3095
  dim_product      |  32951
- fact_orders      |  96203
  dim_customer     |  93096
+ fact_orders      |  96203
  fact_order_items | 109872
 
+=== Referential check: every fact key has a dimension row
  orders_missing_customer | orders_missing_date | items_missing_product | items_missing_seller 
 -------------------------+---------------------+-----------------------+----------------------
                        0 |                   0 |                     0 |                    0
 
+=== Sample: monthly GMV straight from the star (what Power BI will compute)
  year_month | orders |    gmv     | avg_review 
 ------------+--------+------------+------------
  2017-01    |    750 |  127482.37 |       4.20
@@ -72,4 +83,11 @@ ANALYZE
  2018-07    |   6156 | 1027286.52 |       4.32
  2018-08    |   6351 |  985491.64 |       4.31
 
+=== Assertion: star schema must match 06 Q12 exactly
 DO
+=== Black Friday 2017 vs the average day that month
+ is_black_friday_2017 | orders_per_day | gmv_per_day | pct_late 
+----------------------+----------------+-------------+----------
+ f                    |            211 |       33726 |     13.3
+ t                    |           1147 |      175178 |     20.0
+

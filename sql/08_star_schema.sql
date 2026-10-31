@@ -42,7 +42,7 @@ DROP TABLE IF EXISTS dw.dim_date;
 -- =============================================================================
 -- dim_date
 -- =============================================================================
-\echo '=== dim_date'
+\qecho '=== dim_date'
 CREATE TABLE dw.dim_date AS
 SELECT d::date                                   AS date_key,
        EXTRACT(YEAR    FROM d)::int              AS year,
@@ -67,7 +67,7 @@ ALTER TABLE dw.dim_date ADD PRIMARY KEY (date_key);
 -- dim_customer  (one row per PERSON)
 -- Location = the most recent order's address. RFM from 07.
 -- =============================================================================
-\echo '=== dim_customer'
+\qecho '=== dim_customer'
 CREATE TABLE dw.dim_customer AS
 WITH latest_address AS (
   SELECT DISTINCT ON (customer_unique_id)
@@ -110,7 +110,7 @@ CREATE INDEX ON dw.dim_customer (rfm_segment);
 -- =============================================================================
 -- dim_product
 -- =============================================================================
-\echo '=== dim_product'
+\qecho '=== dim_product'
 CREATE TABLE dw.dim_product AS
 SELECT p.product_id,
        p.product_category_name                                  AS category_pt,
@@ -138,7 +138,7 @@ CREATE INDEX ON dw.dim_product (category);
 -- =============================================================================
 -- dim_seller
 -- =============================================================================
-\echo '=== dim_seller'
+\qecho '=== dim_seller'
 CREATE TABLE dw.dim_seller AS
 SELECT s.seller_id,
        s.seller_zip_code_prefix,
@@ -156,7 +156,7 @@ CREATE INDEX ON dw.dim_seller (seller_state);
 -- =============================================================================
 -- fact_orders  (grain: one delivered order, 2017-01 .. 2018-08)
 -- =============================================================================
-\echo '=== fact_orders'
+\qecho '=== fact_orders'
 CREATE TABLE dw.fact_orders AS
 WITH items AS (
   SELECT order_id,
@@ -220,7 +220,7 @@ CREATE INDEX ON dw.fact_orders (customer_state);
 -- Order-level attributes are repeated on each line; DO NOT sum total_paid or
 -- review_score here — use fact_orders for those. gmv/price/freight are safe.
 -- =============================================================================
-\echo '=== fact_order_items'
+\qecho '=== fact_order_items'
 CREATE TABLE dw.fact_order_items AS
 SELECT i.order_id,
        i.order_item_id,
@@ -251,7 +251,7 @@ ANALYZE;
 -- =============================================================================
 -- Reconciliation: the star schema must reproduce the Step-6 headline KPIs
 -- =============================================================================
-\echo '=== Reconciliation vs 06 Q12 (orders 96203, gmv 15371741.09, cash 15374496.52)'
+\qecho '=== Reconciliation vs 06 Q12 (orders 96203, gmv 15371741.09, cash 15374496.52)'
 SELECT COUNT(*)                                  AS orders,
        COUNT(DISTINCT customer_unique_id)        AS customers,
        ROUND(SUM(gmv), 2)                        AS gmv,
@@ -261,11 +261,11 @@ SELECT COUNT(*)                                  AS orders,
        ROUND(100.0 * AVG(is_late::int), 1)       AS pct_late
 FROM dw.fact_orders;
 
-\echo '=== Items fact sums to the same GMV'
+\qecho '=== Items fact sums to the same GMV'
 SELECT COUNT(*) AS order_lines, ROUND(SUM(gmv), 2) AS gmv
 FROM dw.fact_order_items;
 
-\echo '=== Row counts of every dw object'
+\qecho '=== Row counts of every dw object'
 SELECT 'dim_date'         AS tbl, COUNT(*) FROM dw.dim_date
 UNION ALL SELECT 'dim_customer',    COUNT(*) FROM dw.dim_customer
 UNION ALL SELECT 'dim_product',     COUNT(*) FROM dw.dim_product
@@ -273,7 +273,7 @@ UNION ALL SELECT 'dim_seller',      COUNT(*) FROM dw.dim_seller
 UNION ALL SELECT 'fact_orders',     COUNT(*) FROM dw.fact_orders
 UNION ALL SELECT 'fact_order_items',COUNT(*) FROM dw.fact_order_items;
 
-\echo '=== Referential check: every fact key has a dimension row'
+\qecho '=== Referential check: every fact key has a dimension row'
 SELECT
   (SELECT COUNT(*) FROM dw.fact_orders f
      WHERE NOT EXISTS (SELECT 1 FROM dw.dim_customer d WHERE d.customer_unique_id = f.customer_unique_id)) AS orders_missing_customer,
@@ -285,7 +285,7 @@ SELECT
      WHERE NOT EXISTS (SELECT 1 FROM dw.dim_seller d WHERE d.seller_id = f.seller_id))                    AS items_missing_seller;
 -- expect all zeros
 
-\echo '=== Sample: monthly GMV straight from the star (what Power BI will compute)'
+\qecho '=== Sample: monthly GMV straight from the star (what Power BI will compute)'
 SELECT d.year_month,
        COUNT(*)                 AS orders,
        ROUND(SUM(f.gmv), 2)     AS gmv,
@@ -295,7 +295,7 @@ JOIN dw.dim_date d ON d.date_key = f.purchase_date_key
 GROUP BY d.year_month
 ORDER BY d.year_month;
 
-\echo '=== Assertion: star schema must match 06 Q12 exactly'
+\qecho '=== Assertion: star schema must match 06 Q12 exactly'
 DO $$
 DECLARE v_orders int; v_gmv numeric; v_cash numeric; v_lines int; v_items_gmv numeric; v_orphans int;
 BEGIN
@@ -312,3 +312,13 @@ BEGIN
   IF v_orphans   <> 0            THEN RAISE EXCEPTION '% orphaned fact rows', v_orphans; END IF;
   RAISE NOTICE 'Reconciliation passed: % orders, GMV %, cash %', v_orders, v_gmv, v_cash;
 END $$;
+
+\qecho '=== Black Friday 2017 vs the average day that month'
+SELECT d.is_black_friday_2017,
+       COUNT(*) / COUNT(DISTINCT d.date_key)             AS orders_per_day,
+       ROUND(SUM(f.gmv) / COUNT(DISTINCT d.date_key), 0) AS gmv_per_day,
+       ROUND(100.0 * AVG(f.is_late::int), 1)             AS pct_late
+FROM dw.fact_orders f
+JOIN dw.dim_date d ON d.date_key = f.purchase_date_key
+WHERE d.year_month = '2017-11'
+GROUP BY 1;
