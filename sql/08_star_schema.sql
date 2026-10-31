@@ -58,7 +58,7 @@ SELECT d::date                                   AS date_key,
        EXTRACT(ISODOW  FROM d) IN (6, 7)         AS is_weekend,
        EXTRACT(WEEK    FROM d)::int              AS iso_week,
        d::date = DATE '2017-11-24'               AS is_black_friday_2017
-FROM GENERATE_SERIES(DATE '2016-01-01', DATE '2018-12-31', INTERVAL '1 day') d;
+FROM GENERATE_SERIES(DATE '2017-01-01', DATE '2018-08-31', INTERVAL '1 day') d;
 
 ALTER TABLE dw.dim_date ADD PRIMARY KEY (date_key);
 

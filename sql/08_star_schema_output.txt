@@ -5,7 +5,7 @@ DROP TABLE
 DROP TABLE
 DROP TABLE
 DROP TABLE
-SELECT 1096
+SELECT 608
 ALTER TABLE
 SELECT 93096
 ALTER TABLE
@@ -38,7 +38,7 @@ ANALYZE
 
        tbl        | count  
 ------------------+--------
- dim_date         |   1096
+ dim_date         |    608
  dim_seller       |   3095
  dim_product      |  32951
  dim_customer     |  93096
