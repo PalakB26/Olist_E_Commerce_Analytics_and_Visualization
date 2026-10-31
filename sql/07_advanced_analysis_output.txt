@@ -135,3 +135,25 @@ ALTER TABLE
  431af27f296bc6519d890aa5a05fdb11 | SP           |    116 |     15.3 |       3.80 |    15103.05
  dd7ddc04e1b6c2c614352b383efe2d36 | SP           |    121 |     14.8 |       3.78 |    12025.18
 
+ orders | pct_seller_late | pct_customer_late | pct_late_seller_caused | pct_late_carrier_caused 
+--------+-----------------+-------------------+------------------------+-------------------------
+  96202 |             8.9 |               8.1 |                    2.2 |                     5.9
+
+            seller_id             | seller_state | orders | pct_seller_late | pct_customer_late 
+----------------------------------+--------------+--------+-----------------+-------------------
+ 88460e8ebdecbfecb5f9601833981930 | PR           |    246 |            50.3 |              19.7
+ 1ca7077d890b907f89be8c954a02686a | SP           |    108 |            49.6 |              19.7
+ f4aba7c0bca51484c30ab7bdc34bcdd1 | SP           |    107 |            45.6 |               7.0
+ b1fc4f64df5a0e8b6913ab38803c57a9 | RJ           |    107 |            43.0 |              11.6
+ 8e6cc767478edae941d9bd9eb778d77a | MG           |    100 |            38.0 |               7.4
+ 7aa4334be125fcdd2ba64b3180029f14 | SP           |    214 |            36.3 |              13.5
+ dd7ddc04e1b6c2c614352b383efe2d36 | SP           |    121 |            35.9 |              14.8
+ 213b25e6f54661939f11710a6fddb871 | SP           |    152 |            35.8 |              11.1
+ 37515688008a7a40ac93e3b2e4ab203f | SP           |    227 |            35.1 |              10.0
+ 4c2b230173bb36f9b240f2b8ac11786e | SP           |    258 |            34.4 |               9.0
+
+ is_black_friday_2017 | orders_per_day | gmv_per_day | pct_late 
+----------------------+----------------+-------------+----------
+ f                    |            211 |       33726 |     13.3
+ t                    |           1147 |      175178 |     20.0
+

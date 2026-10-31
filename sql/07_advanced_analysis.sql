@@ -294,3 +294,50 @@ GROUP BY s.seller_id, s.seller_state
 HAVING COUNT(DISTINCT o.order_id) >= 100
 ORDER BY pct_late DESC
 LIMIT 10;
+
+\echo '=== A10. Who missed the SLA: seller hand-off vs carrier transit'
+WITH o AS (
+  SELECT o.order_id, o.order_month, o.is_late,
+         o.order_delivered_carrier_date,
+         MIN(i.shipping_limit_date) AS shipping_limit
+  FROM v_orders_clean o
+  JOIN order_items i USING (order_id)
+  WHERE o.order_delivered_carrier_date IS NOT NULL
+  GROUP BY o.order_id, o.order_month, o.is_late, o.order_delivered_carrier_date
+)
+SELECT COUNT(*)                                                                   AS orders,
+       ROUND(100.0 * AVG((order_delivered_carrier_date > shipping_limit)::int), 1) AS pct_seller_late,
+       ROUND(100.0 * AVG(is_late::int), 1)                                        AS pct_customer_late,
+       ROUND(100.0 * AVG((is_late AND order_delivered_carrier_date > shipping_limit)::int), 1)     AS pct_late_seller_caused,
+       ROUND(100.0 * AVG((is_late AND order_delivered_carrier_date <= shipping_limit)::int), 1)    AS pct_late_carrier_caused
+FROM o;
+
+\echo '=== A10b. Same split, by month'
+-- copy the CTE above, then:
+SELECT order_month,
+       ROUND(100.0 * AVG((order_delivered_carrier_date > shipping_limit)::int), 1) AS pct_seller_late,
+       ROUND(100.0 * AVG(is_late::int), 1)                                        AS pct_customer_late
+FROM o GROUP BY order_month ORDER BY order_month;
+
+\echo '=== A10c. Sellers with the worst hand-off SLA (min 100 orders)'
+SELECT i.seller_id, s.seller_state,
+       COUNT(DISTINCT o.order_id) AS orders,
+       ROUND(100.0 * AVG((o.order_delivered_carrier_date > i.shipping_limit_date)::int), 1) AS pct_seller_late,
+       ROUND(100.0 * AVG(o.is_late::int), 1)                                                AS pct_customer_late
+FROM v_orders_clean o
+JOIN order_items i USING (order_id)
+JOIN sellers s ON s.seller_id = i.seller_id
+WHERE o.order_delivered_carrier_date IS NOT NULL
+GROUP BY i.seller_id, s.seller_state
+HAVING COUNT(DISTINCT o.order_id) >= 100
+ORDER BY pct_seller_late DESC
+LIMIT 10;
+
+\echo '=== A11. Black Friday 2017 vs the average day that month'
+SELECT d.is_black_friday_2017,
+       COUNT(*) / COUNT(DISTINCT d.date_key)             AS orders_per_day,
+       ROUND(SUM(f.gmv) / COUNT(DISTINCT d.date_key), 0) AS gmv_per_day,
+       ROUND(100.0 * AVG(f.is_late::int), 1)             AS pct_late
+FROM dw.fact_orders f JOIN dw.dim_date d ON d.date_key = f.purchase_date_key
+WHERE d.year_month = '2017-11'
+GROUP BY 1;

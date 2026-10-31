@@ -1,4 +1,4 @@
-# Olist Brazilian E-Commerce — SQL Analytics Project
+# Olist E-Commerce Analytics and Visualization
 
 End-to-end analytics project on the [Olist Brazilian E-Commerce dataset](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce)
 (~100k orders, 9 relational tables, 2016–2018), built in **PostgreSQL** and visualised in **Power BI**.

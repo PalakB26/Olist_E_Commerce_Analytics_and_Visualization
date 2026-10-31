@@ -116,6 +116,17 @@ FROM v_orders_clean
 GROUP BY order_month
 ORDER BY order_month;
 
+\echo '=== Q5b. Delivery performance by customer state (min 500 orders)'
+SELECT customer_state,
+       COUNT(*)                                  AS orders,
+       ROUND(AVG(delivery_days), 1)              AS avg_delivery_days,
+       ROUND(100.0 * AVG(is_late::int), 1)       AS pct_late,
+       ROUND(AVG(days_vs_estimate), 1)           AS avg_days_vs_estimate
+FROM v_orders_clean
+GROUP BY customer_state
+HAVING COUNT(*) >= 500
+ORDER BY pct_late DESC;
+
 
 -- =============================================================================
 -- Q6. Does late delivery hurt review scores?
@@ -137,6 +148,13 @@ FROM v_orders_clean o
 JOIN v_order_reviews_latest r ON r.order_id = o.order_id
 GROUP BY delivery_bucket
 ORDER BY delivery_bucket;
+
+\echo '=== Q6b. 2x2: late vs 1-2 star review'
+SELECT o.is_late,
+       COUNT(*) FILTER (WHERE r.review_score <= 2) AS low_reviews,
+       COUNT(*) FILTER (WHERE r.review_score >  2) AS ok_reviews
+FROM v_orders_clean o JOIN v_order_reviews_latest r USING (order_id)
+GROUP BY o.is_late ORDER BY o.is_late;
 
 
 -- =============================================================================
@@ -294,3 +312,27 @@ SELECT (SELECT COUNT(*)                        FROM v_orders_clean)  AS orders,
        (SELECT ROUND(100.0 * AVG(is_late::int), 1) FROM v_orders_clean) AS pct_late,
        (SELECT ROUND(AVG(delivery_days), 1) FROM v_orders_clean)      AS avg_delivery_days
 FROM gmv, cash;
+
+\echo '=== Q13a. Non-delivered orders by status and month (all orders, 2017-01..2018-08)'
+SELECT DATE_TRUNC('month', order_purchase_timestamp)::date AS month,
+       COUNT(*) FILTER (WHERE order_status = 'canceled')    AS canceled,
+       COUNT(*) FILTER (WHERE order_status = 'unavailable') AS unavailable,
+       ROUND(100.0 * COUNT(*) FILTER (WHERE order_status IN ('canceled','unavailable')) / COUNT(*), 2) AS pct_lost
+FROM orders
+WHERE order_purchase_timestamp >= '2017-01-01' AND order_purchase_timestamp < '2018-09-01'
+GROUP BY 1 ORDER BY 1;
+
+\echo '=== Q13b. Cancellation rate by seller (orders with items, min 100 orders)'
+SELECT i.seller_id, s.seller_state,
+       COUNT(DISTINCT o.order_id)                                                  AS orders,
+       COUNT(DISTINCT o.order_id) FILTER (WHERE o.order_status = 'canceled')       AS canceled,
+       ROUND(100.0 * COUNT(DISTINCT o.order_id) FILTER (WHERE o.order_status = 'canceled')
+             / COUNT(DISTINCT o.order_id), 1)                                      AS pct_canceled
+FROM orders o
+JOIN order_items i USING (order_id)
+JOIN sellers s ON s.seller_id = i.seller_id
+WHERE o.order_purchase_timestamp >= '2017-01-01' AND o.order_purchase_timestamp < '2018-09-01'
+GROUP BY i.seller_id, s.seller_state
+HAVING COUNT(DISTINCT o.order_id) >= 100
+ORDER BY pct_canceled DESC
+LIMIT 10;

@@ -294,3 +294,21 @@ FROM dw.fact_orders f
 JOIN dw.dim_date d ON d.date_key = f.purchase_date_key
 GROUP BY d.year_month
 ORDER BY d.year_month;
+
+\echo '=== Assertion: star schema must match 06 Q12 exactly'
+DO $$
+DECLARE v_orders int; v_gmv numeric; v_cash numeric; v_lines int; v_items_gmv numeric; v_orphans int;
+BEGIN
+  SELECT COUNT(*), ROUND(SUM(gmv),2), ROUND(SUM(total_paid),2) INTO v_orders, v_gmv, v_cash FROM dw.fact_orders;
+  SELECT COUNT(*), ROUND(SUM(gmv),2) INTO v_lines, v_items_gmv FROM dw.fact_order_items;
+  SELECT COUNT(*) INTO v_orphans FROM dw.fact_order_items f
+   WHERE NOT EXISTS (SELECT 1 FROM dw.dim_product d WHERE d.product_id = f.product_id)
+      OR NOT EXISTS (SELECT 1 FROM dw.dim_seller  d WHERE d.seller_id  = f.seller_id);
+
+  IF v_orders    <> 96203        THEN RAISE EXCEPTION 'fact_orders count % <> 96203', v_orders; END IF;
+  IF v_gmv       <> 15371741.09  THEN RAISE EXCEPTION 'GMV % <> 15371741.09', v_gmv; END IF;
+  IF v_cash      <> 15374496.52  THEN RAISE EXCEPTION 'cash % <> 15374496.52', v_cash; END IF;
+  IF v_items_gmv <> v_gmv        THEN RAISE EXCEPTION 'items GMV % <> orders GMV %', v_items_gmv, v_gmv; END IF;
+  IF v_orphans   <> 0            THEN RAISE EXCEPTION '% orphaned fact rows', v_orphans; END IF;
+  RAISE NOTICE 'Reconciliation passed: % orders, GMV %, cash %', v_orders, v_gmv, v_cash;
+END $$;

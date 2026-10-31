@@ -50,6 +50,11 @@
                           547 |               551
 (1 row)
 
+ reviewed_before_delivery | reviewed_orders | pct | avg_score_pre_delivery | avg_score_post_delivery 
+--------------------------+-----------------+-----+------------------------+-------------------------
+                     8120 |           95560 | 8.5 |                   2.77 |                    4.29
+(1 row)
+
 INSERT 0 0
 CREATE VIEW
 DROP TABLE

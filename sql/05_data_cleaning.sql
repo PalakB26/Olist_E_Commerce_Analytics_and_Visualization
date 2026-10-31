@@ -91,6 +91,15 @@ SELECT COUNT(*) AS orders_with_multiple_reviews,
 FROM (SELECT order_id, COUNT(*) AS n FROM order_reviews GROUP BY order_id) t
 WHERE n > 1;
 
+\echo '=== A10. Reviews created before the order was delivered'
+SELECT COUNT(*) FILTER (WHERE r.review_creation_date < o.order_delivered_customer_date) AS reviewed_before_delivery,
+       COUNT(*)                                                                          AS reviewed_orders,
+       ROUND(100.0 * COUNT(*) FILTER (WHERE r.review_creation_date < o.order_delivered_customer_date)
+             / COUNT(*), 1)                                                              AS pct,
+       ROUND(AVG(r.review_score) FILTER (WHERE r.review_creation_date <  o.order_delivered_customer_date), 2) AS avg_score_pre_delivery,
+       ROUND(AVG(r.review_score) FILTER (WHERE r.review_creation_date >= o.order_delivered_customer_date), 2) AS avg_score_post_delivery
+FROM v_orders_clean o
+JOIN v_order_reviews_latest r USING (order_id);
 
 -- =============================================================================
 -- PART B — CLEANING ACTIONS (additive only)

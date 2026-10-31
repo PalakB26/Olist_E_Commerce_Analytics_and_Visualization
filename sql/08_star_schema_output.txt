@@ -41,8 +41,8 @@ ANALYZE
  dim_date         |    608
  dim_seller       |   3095
  dim_product      |  32951
- dim_customer     |  93096
  fact_orders      |  96203
+ dim_customer     |  93096
  fact_order_items | 109872
 
  orders_missing_customer | orders_missing_date | items_missing_product | items_missing_seller 
@@ -72,3 +72,4 @@ ANALYZE
  2018-07    |   6156 | 1027286.52 |       4.32
  2018-08    |   6351 |  985491.64 |       4.31
 
+DO
